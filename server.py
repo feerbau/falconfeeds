@@ -87,11 +87,11 @@ def enviar_incidente(token, chat_id, title, content, category, url, countries, t
     bot = telebot.TeleBot(token)
     texto = emojize(":police_car_light:", language='alias') + \
         " <b>Nuevo Incidente de "+category+"</b> " + emojize(":police_car_light: \n", language='alias') \
-            + "<u>Title</u>: " + title + "\n"\
-            + "<u>Threat Actors</u>: " + threat_actors + "\n"\
-            + "<u>Content</u>: " + content \
-            + "\n<u>Países miembros afectados</u>: " + emojize_countries(countries) \
-            + " \n<u>Publicado en</u>: <a href=\"" + url + "\">Link</a>"
+            + "<b>Title</b>: " + title + "\n"\
+            + "<b>Threat Actors</b>: " + threat_actors + "\n"\
+            + "<b>Content</b>: " + content \
+            + "\n<b>Países miembros afectados</b>: " + emojize_countries(countries) \
+            + " \n<b>Publicado en</b>: <a href=\"" + url + "\">Link</a>"
     for x in telebot.util.smart_split(texto, 4096):
         bot.send_message(chat_id, texto, parse_mode='HTML')
 

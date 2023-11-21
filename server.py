@@ -6,7 +6,7 @@ import os
 
 app = Flask(__name__)
 port = int(os.environ.get("PORT", 5000))
-TG_TOKEN_KEY = os.environ.get("TG_TOKEN_KEY") 
+TG_TOKEN_KEY = os.environ.get("TG_TOKEN_KEY")
 CHAT_ID = os.environ.get("TG_CHAT_ID")
 
 member_countries_emojis = {
@@ -83,11 +83,15 @@ def test_emojis():
     bot = telebot.TeleBot(TG_TOKEN_KEY)
     bot.send_message(CHAT_ID, emojize_countries(country_victims), parse_mode='HTML')
 
-def enviar_incidente(token, chat_id, title, content, category, url, countries):
+def enviar_incidente(token, chat_id, title, content, category, url, countries, threat_actors):
     bot = telebot.TeleBot(token)
     texto = emojize(":police_car_light:", language='alias') + \
         " <b>Nuevo Incidente de "+category+"</b> " + emojize(":police_car_light: \n", language='alias') \
-            + "<u>Title</u>: "  + title + "\n" + "<u>Content</u>: " + content + "\nPaíses miembros afectados: " + emojize_countries(countries) + " \n<i>Publicado en</i>: <a href=\"" + url + "\">Link</a>"
+            + "<u>Title</u>: " + title + "\n"\
+            + "<u>Threat Actors</u>: " + threat_actors + "\n"\
+            + "<u>Content</u>: " + content \
+            + "\nPaíses miembros afectados: " + emojize_countries(countries) \
+            + " \n<i>Publicado en</i>: <a href=\"" + url + "\">Link</a>"
     for x in telebot.util.smart_split(texto, 4096):
         bot.send_message(chat_id, texto, parse_mode='HTML')
 
@@ -97,6 +101,7 @@ class FalconFeeds:
         self.event_type = data['eventType']
         self.event_triggered_at = data['eventTriggeredAt']
         self.category = data['data']['category']
+        self.threat_actors = data['data']['threatActors']
         self.victims = data['data']['victims']
         self.title = data['data']['title']
         self.content = data['data']['content']
@@ -107,6 +112,9 @@ class FalconFeeds:
     
     def is_ransomware(self):
         return self.category == Category.RANSOMWARE.value
+    
+    def get_threat_actors(self):
+        return [threat_actor['name'] for threat_actor in self.threat_actors]
     
     def list_items_in(self, countries):
         in_list = []
@@ -129,7 +137,7 @@ class FalconFeeds:
         countries = self.country_victim_in(country_victims)
         print("Nuevo incidente de " + self.category + " en " + ', '.join(countries))
         if self.is_threat_feed_event() and self.is_ransomware() and countries != []:
-            enviar_incidente(TG_TOKEN_KEY, CHAT_ID, self.title, self.content, self.category, self.url, countries)
+            enviar_incidente(TG_TOKEN_KEY, CHAT_ID, self.title, self.content, self.category, self.url, countries, ', '.join(self.get_threat_actors()))
         else:
             return False
         return True

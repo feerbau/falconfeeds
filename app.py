@@ -3,10 +3,11 @@ import telebot
 from emoji import emojize
 from flask import Flask, request, jsonify
 import os
-app = Flask(__name__)
 
-TG_TOKEN_KEY = os.getenv("TG_TOKEN_KEY")
-CHAT_ID = os.getenv("TG_CHAT_ID")
+app = Flask(__name__)
+port = int(os.environ.get("PORT", 5000))
+TG_TOKEN_KEY = os.environ.get("TG_TOKEN_KEY")
+CHAT_ID = os.environ.get("TG_CHAT_ID")
 
 member_countries_emojis = {
     'Antigua and Barbuda': emojize(":antigua_barbuda:", language='alias')+" (AG)",
@@ -144,6 +145,7 @@ def falconfeeds_webhook():
     return jsonify(message="Fail!"), 400
     
 
-    
+if __name__ == "__main__":
+    app.run(port=port)
 
     

@@ -90,8 +90,8 @@ def enviar_incidente(token, chat_id, title, content, category, url, countries, t
             + "<u>Title</u>: " + title + "\n"\
             + "<u>Threat Actors</u>: " + threat_actors + "\n"\
             + "<u>Content</u>: " + content \
-            + "\nPaíses miembros afectados: " + emojize_countries(countries) \
-            + " \n<i>Publicado en</i>: <a href=\"" + url + "\">Link</a>"
+            + "\n<u>Países miembros afectados</u>: " + emojize_countries(countries) \
+            + " \n<u>Publicado en</u>: <a href=\"" + url + "\">Link</a>"
     for x in telebot.util.smart_split(texto, 4096):
         bot.send_message(chat_id, texto, parse_mode='HTML')
 

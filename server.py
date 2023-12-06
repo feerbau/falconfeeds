@@ -39,7 +39,6 @@ member_countries_emojis = {
     "Haiti": emojize(":haiti:", language='alias')+ " (HT)",
     "Honduras": emojize(":honduras:", language='alias')+ " (HN)",
     "Mexico": emojize(":mexico:", language='alias')+ " (MX)",
-    "Nicaragua": emojize(":nicaragua:", language='alias')+ " (NI)",
     "Panama": emojize(":panama:", language='alias')+ " (PA)",
     "Paraguay": emojize(":paraguay:", language='alias')+ " (PY)",
     "Peru": emojize(":peru:", language='alias')+ " (PE)",

@@ -1,0 +1,11 @@
+version: ''
+services:
+  flask:
+      build: .
+      environment: 
+        - TG_TOKEN_KEY=${TG_TOKEN_KEY}
+        - TG_CHAT_ID=${TG_CHAT_ID}
+      ports:
+        - 5000:5000
+      volumes:
+        - ".:/code"

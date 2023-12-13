@@ -1,13 +1,5 @@
-from enum import Enum
 import telebot
 from emoji import emojize
-from flask import Flask, request, jsonify
-import os
-
-app = Flask(__name__)
-port = int(os.environ.get("PORT", 5000))
-TG_TOKEN_KEY = os.environ.get("TG_TOKEN_KEY")
-CHAT_ID = os.environ.get("TG_CHAT_ID")
 
 member_countries_emojis = {
     'Antigua and Barbuda': emojize(":antigua_barbuda:", language='alias')+" (AG)",
@@ -47,21 +39,6 @@ member_countries_emojis = {
     "Venezuela": emojize(":venezuela:", language='alias')+ " (VE)",
     "Portugal": emojize(":portugal:", language='alias')+ " (PT)",
 }
-class Event(Enum):
-    THREAT_FEED = 'NEW_POST'
-
-class Category(Enum):
-    RANSOMWARE = 'Ransomware'
-    DDOS = 'DDoS Attack'
-    MALWARE = 'Malware'
-    PHISHING = 'Phishing'
-    DATA_LEAK = 'Data Leak'
-    COMBO_LIST = 'Combo List'
-    DATA_BREACH = 'Data Breach'
-    LOGS = 'Logs'
-    DEFACEMENT = 'Defacement'
-    ALERT = 'Alert'
-    VULNERABILITY = 'Vulnerability'
 
 country_victims = [
     'Antigua and Barbuda', 'Argentina', 'Bahamas', 'Barbados', 
@@ -79,9 +56,6 @@ def emojize_countries(countries):
         emojis.append(member_countries_emojis[country])
     return ', '.join(emojis)
 
-def test_emojis():
-    bot = telebot.TeleBot(TG_TOKEN_KEY)
-    bot.send_message(CHAT_ID, emojize_countries(country_victims), parse_mode='HTML')
 
 def enviar_incidente(token, chat_id, title, content, category, url, countries, threat_actors):
     bot = telebot.TeleBot(token)
@@ -94,66 +68,3 @@ def enviar_incidente(token, chat_id, title, content, category, url, countries, t
             + " \n<b>Publicado en</b>: <a href=\"" + url + "\">Link</a>"
     for x in telebot.util.smart_split(texto, 4096):
         bot.send_message(chat_id, texto, parse_mode='HTML')
-
-class FalconFeeds:
-
-    def __init__(self, data):
-        self.event_type = data['eventType']
-        self.event_triggered_at = data['eventTriggeredAt']
-        self.category = data['data']['category']
-        self.threat_actors = data['data']['threatActors']
-        self.victims = data['data']['victims']
-        self.title = data['data']['title']
-        self.content = data['data']['content']
-        self.url = data['data']['publishedURL']
-    
-    def is_threat_feed_event(self):
-        return self.event_type == Event.THREAT_FEED.value
-    
-    def is_ransomware(self):
-        return self.category == Category.RANSOMWARE.value
-    
-    def get_threat_actors(self):
-        return [threat_actor['name'] for threat_actor in self.threat_actors]
-    
-    def list_items_in(self, countries):
-        in_list = []
-        for country in countries:
-            if country in country_victims:
-                in_list.append(country)
-        return in_list
-    
-    def country_victim_in(self, country_victims):
-        victims = []
-        for data in self.victims:
-            if data['type'] == 'Country':
-                for country in data['values']:
-                    if country in country_victims:
-                        victims.append(country)
-        return victims
-
-    def receive_webhook(self):
-        victims = []
-        countries = self.country_victim_in(country_victims)
-        print("Nuevo incidente de " + self.category + " en " + ', '.join(countries))
-        if self.is_threat_feed_event() and self.is_ransomware() and countries != []:
-            enviar_incidente(TG_TOKEN_KEY, CHAT_ID, self.title, self.content, self.category, self.url, countries, ', '.join(self.get_threat_actors()))
-        else:
-            return False
-        return True
-
-
-@app.route('/webhooks/falconfeeds', methods=['POST'])
-def falconfeeds_webhook():
-    data = request.get_json()
-    falcon_feeds = FalconFeeds(data)
-    ok = falcon_feeds.receive_webhook()
-    if ok:
-        return jsonify(message="Webhook received"), 200
-    return jsonify(message="Fail!"), 400
-    
-
-if __name__ == "__main__":
-    app.run(port=port)
-
-    

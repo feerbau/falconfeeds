@@ -5,6 +5,8 @@ class Config(object):
     """
     Configuración base.
     """
+    BASIC_AUTH_USERNAME = environ.get('AUTH_USERNAME')
+    BASIC_AUTH_PASSWORD = environ.get('AUTH_PASSWORD')
     TG_TOKEN_KEY = environ.get("TG_TOKEN_KEY")
     CHAT_ID = environ.get("TG_CHAT_ID")
     PORT = environ.get("PORT")

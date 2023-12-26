@@ -6,3 +6,12 @@ class Country(db.Model):
 
     def __repr__(self):
         return '<Country %r>' % self.name
+    
+    @classmethod
+    def get_or_create(self, name):
+        country = Country.query.filter_by(name=name).first()
+        if country is None:
+            country = Country(name=name)
+            db.session.add(country)
+            db.session.commit()
+        return country

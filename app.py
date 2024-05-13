@@ -39,7 +39,6 @@ member_countries_emojis = {
     "Haiti": emojize(":haiti:", language='alias')+ " (HT)",
     "Honduras": emojize(":honduras:", language='alias')+ " (HN)",
     "Mexico": emojize(":mexico:", language='alias')+ " (MX)",
-    "Nicaragua": emojize(":nicaragua:", language='alias')+ " (NI)",
     "Panama": emojize(":panama:", language='alias')+ " (PA)",
     "Paraguay": emojize(":paraguay:", language='alias')+ " (PY)",
     "Peru": emojize(":peru:", language='alias')+ " (PE)",
@@ -125,6 +124,8 @@ class FalconFeeds:
     
     def country_victim_in(self, country_victims):
         victims = []
+        if self.victims is None:
+            print("No hay victimas para: " + self.title + " - de cat: " + self.category + " - tipo : " + self.event_type)
         for data in self.victims:
             if data['type'] == 'Country':
                 for country in data['values']:

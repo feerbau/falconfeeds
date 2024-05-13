@@ -1,0 +1,12 @@
+version: '3.8'
+services:
+  web:
+    build: .
+    ports:
+      - "5000:5000"
+    # env_file:
+    #   - .env
+    environment: 
+        - TG_TOKEN_KEY=${TG_TOKEN_KEY}
+        - TG_CHAT_ID=${TG_CHAT_ID}
+        - PORT=${PORT}

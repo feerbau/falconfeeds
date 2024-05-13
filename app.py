@@ -135,7 +135,7 @@ class FalconFeeds:
     def receive_webhook(self):
         victims = []
         countries = self.country_victim_in(country_victims)
-        print("Nuevo incidente de " + self.category + " en " + ', '.join(countries))
+        # print("Nuevo incidente de " + self.category + " en " + ', '.join(countries))
         if self.is_threat_feed_event() and self.is_ransomware() and countries != []:
             enviar_incidente(TG_TOKEN_KEY, CHAT_ID, self.title, self.content, self.category, self.url, countries, ', '.join(self.get_threat_actors()))
         else:

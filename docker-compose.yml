@@ -10,3 +10,5 @@ services:
         - TG_TOKEN_KEY=${TG_TOKEN_KEY}
         - TG_CHAT_ID=${TG_CHAT_ID}
         - PORT=${PORT}
+        - AUTH_USERNAME=${AUTH_USERNAME}
+        - AUTH_PASSWORD=${AUTH_PASSWORD}

@@ -8,6 +8,8 @@ app = Flask(__name__)
 port = int(os.environ.get("PORT", 5000))
 TG_TOKEN_KEY = os.environ.get("TG_TOKEN_KEY")
 CHAT_ID = os.environ.get("TG_CHAT_ID")
+USERNAME = os.environ.get("AUTH_USERNAME")
+PASSWORD = os.environ.get("AUTH_PASSWORD")
 
 member_countries_emojis = {
     'Antigua and Barbuda': emojize(":antigua_barbuda:", language='alias')+" (AG)",
@@ -144,17 +146,22 @@ class FalconFeeds:
         return True
 
 
+def verify_basic_auth(username, password):
+    return username == USERNAME and password == PASSWORD
+
+
 @app.route('/webhooks/falconfeeds', methods=['POST'])
 def falconfeeds_webhook():
+    auth = request.authorization
+    if not auth or not verify_basic_auth(auth.username, auth.password):
+        return jsonify({'error': 'Unauthorized'}), 401
     data = request.get_json()
     falcon_feeds = FalconFeeds(data)
     ok = falcon_feeds.receive_webhook()
     if ok:
         return jsonify(message="Webhook received"), 200
     return jsonify(message="Fail!"), 400
-    
+
 
 if __name__ == "__main__":
     app.run(port=port)
-
-    

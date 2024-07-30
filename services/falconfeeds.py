@@ -44,19 +44,18 @@ class FalconFeedsService:
             if country in country_victims:
                 in_list.append(country)
         return in_list
+
     def country_victim_in(self, country_victims):
-        if self.victims == None or self.victims == [] or self.victims is not type(list):
+        if self.victims == None or self.victims == [] or not isinstance(self.victims, list):
             return []
         victims = []
         for country in self.post.countries:
-            #TODO: Entrar en el objeto para buscar el nombre del país.
             if country.name in country_victims:
                 victims.append(country)
         return victims
 
     def receive_webhook(self):
         countries = self.country_victim_in(country_victims)
-        print("Nuevo incidente de " + self.category + " en " + ', '.join(countries), file=sys.stderr)
         if self.is_threat_feed_event() and self.is_ransomware() and countries != []:
             enviar_incidente(Config.TG_TOKEN_KEY, Config.CHAT_ID, self.title, self.content, self.category, self.url, countries, ', '.join(self.get_threat_actors()))
         else:

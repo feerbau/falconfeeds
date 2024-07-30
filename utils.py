@@ -53,7 +53,7 @@ country_victims = [
 def emojize_countries(countries):
     emojis = []
     for country in countries:
-        emojis.append(member_countries_emojis[country])
+        emojis.append(member_countries_emojis[country.name])
     return ', '.join(emojis)
 
 

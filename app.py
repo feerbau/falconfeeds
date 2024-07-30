@@ -29,56 +29,6 @@ app.json.sort_keys = False
 init_app(app)
 config_db(app)
 
-class FalconFeeds:
-
-    def __init__(self, data):
-        self.event_type = data['eventType']
-        self.event_triggered_at = data['eventTriggeredAt']
-        self.category = data['data']['category']
-        self.threat_actors = data['data']['threatActors']
-        self.victims = data['data']['victims']
-        self.title = data['data']['title']
-        self.content = data['data']['content']
-        self.url = data['data']['publishedURL']
-    
-    def is_threat_feed_event(self):
-        return self.event_type == Event.THREAT_FEED.value
-    
-    def is_ransomware(self):
-        return self.category == Category.RANSOMWARE.value
-    
-    def get_threat_actors(self):
-        return [threat_actor['name'] for threat_actor in self.threat_actors]
-    
-    def list_items_in(self, countries):
-        in_list = []
-        for country in countries:
-            if country in country_victims:
-                in_list.append(country)
-        return in_list
-    
-    def country_victim_in(self, country_victims):
-        victims = []
-        if self.victims is None:
-            print("No hay victimas para: " + self.title + " - de cat: " + self.category + " - tipo : " + self.event_type)
-        for data in self.victims:
-            if data['type'] == 'Country':
-                for country in data['values']:
-                    if country in country_victims:
-                        victims.append(country)
-        return victims
-
-    def receive_webhook(self):
-        victims = []
-        countries = self.country_victim_in(country_victims)
-        print("Nuevo incidente de " + self.category + " en " + ', '.join(countries))
-        if self.is_threat_feed_event() and self.is_ransomware() and countries != []:
-            print("Hola")
-            # enviar_incidente(TG_TOKEN_KEY, CHAT_ID, self.title, self.content, self.category, self.url, countries, ', '.join(self.get_threat_actors()))
-        else:
-            return False
-        return True
-
 
 def verify_basic_auth(username, password):
     return username == Config.BASIC_AUTH_USERNAME and password == Config.BASIC_AUTH_PASSWORD
@@ -90,7 +40,11 @@ def falconfeeds_webhook():
     if not auth or not verify_basic_auth(auth.username, auth.password):
         return jsonify({'error': 'Unauthorized'}), 401
     data = request.get_json()
-    falcon_feeds = FalconFeeds(data)
+    if 'uuid' in data['data']:
+        post = Post.query.filter_by(uuid=data['data']['uuid']).first()
+        if post is not None:
+            return jsonify(message="Duplicated"), 200
+    falcon_feeds = FalconFeedsService(data)
     ok = falcon_feeds.receive_webhook()
     if ok:
         return jsonify(message="Webhook received"), 200
@@ -139,8 +93,6 @@ def get_stats_by_country():
     for country in query.all():
         stats[country.name] = country.posts.count()
     return stats
-
-
 
 if __name__ == "__main__":
     app.run(host=Config.APP_RUN_HOST, port=Config.PORT, debug=Config.DEBUG)

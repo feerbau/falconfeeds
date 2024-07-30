@@ -33,7 +33,7 @@ class Post(db.Model):
     def create(self, **kwargs):
         attrs = {
             'uuid': kwargs['data']['uuid'],
-            'triggered_at': kwargs['eventTriggeredAt'],
+            'triggered_at': datetime.strptime(kwargs['eventTriggeredAt'], "%Y-%m-%dT%H:%M:%SZ"),
             'category': Category(kwargs['data']['category']),
             'published_timestamp_miliseconds': kwargs['data']['publishedTimestampInMilliseconds'],
             # 'threat_actors': kwargs['data']['threatActors'],

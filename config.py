@@ -10,6 +10,7 @@ class Config(object):
     BASIC_AUTH_PASSWORD = environ.get('AUTH_PASSWORD')
     TG_TOKEN_KEY = environ.get("TG_TOKEN_KEY")
     CHAT_ID = environ.get("TG_CHAT_ID")
+    APP_RUN_HOST = environ.get("APP_RUN_HOST", "0.0.0.0")
     PORT = environ.get("PORT", 5000)
     DEBUG = environ.get("DEBUG", False)
     DB_USER = environ.get("DB_USER", "falconfeeds")

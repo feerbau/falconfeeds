@@ -17,6 +17,10 @@ from models.country import Country
 from models.organization import Organization
 from models.image import Image
 from models.post import Post, post_country_association
+from utils import (
+    enviar_incidente,
+    country_victims,
+)
 
 load_dotenv()
 app = Flask(__name__)
@@ -67,16 +71,17 @@ class FalconFeeds:
     def receive_webhook(self):
         victims = []
         countries = self.country_victim_in(country_victims)
-        # print("Nuevo incidente de " + self.category + " en " + ', '.join(countries))
+        print("Nuevo incidente de " + self.category + " en " + ', '.join(countries))
         if self.is_threat_feed_event() and self.is_ransomware() and countries != []:
-            enviar_incidente(TG_TOKEN_KEY, CHAT_ID, self.title, self.content, self.category, self.url, countries, ', '.join(self.get_threat_actors()))
+            print("Hola")
+            # enviar_incidente(TG_TOKEN_KEY, CHAT_ID, self.title, self.content, self.category, self.url, countries, ', '.join(self.get_threat_actors()))
         else:
             return False
         return True
 
 
 def verify_basic_auth(username, password):
-    return username == USERNAME and password == PASSWORD
+    return username == Config.BASIC_AUTH_USERNAME and password == Config.BASIC_AUTH_PASSWORD
 
 
 @app.route('/webhooks/falconfeeds', methods=['POST'])
@@ -137,49 +142,5 @@ def get_stats_by_country():
 
 
 
-@app.route('/stats/threat_actors', methods=['GET'])
-def get_stats_by_threat_actor():
-    date = request.args.get('date')
-    name = request.args.get('name')
-    stats = {}
-    query = ThreatActor.query
-
-    if date:
-        date = datetime.strptime(date, '%Y-%m-%d').date()
-        date.replace(day=1)
-        query = query.join(ThreatActor.posts).filter(Post.published_at.between(date, date + relativedelta(months=1)))
-    if name:
-        query = query.filter(ThreatActor.name == name)
-
-    for threat_actor in query.all():
-        stats[threat_actor.name] = threat_actor.posts.count()
-    stats = {k: v for k, v in sorted(stats.items(), key=lambda item: item[1], reverse=True)}
-    return stats
-
-
-@app.route('/stats/countries', methods=['GET'])
-def get_stats_by_country():
-    date = request.args.get('date')
-    name = request.args.get('name')
-    stats = {}
-    query = (
-        db.session.query(Post, Country)
-        .select_from(Post)
-        .join(post_country_association, Post.id == post_country_association.c.post_id)
-        .join(Country, post_country_association.c.country_id == Country.id)
-    )
-
-    if date:
-        date = datetime.strptime(date, '%Y-%m-%d').date()
-        date.replace(day=1)
-        query = query.filter(Post.published_at.between(date, date + relativedelta(months=1)))
-    if name:
-        query = query.filter(Country.name == name)
-
-    for country in query.all():
-        stats[country.name] = country.posts.count()
-    return stats
-
-
 if __name__ == "__main__":
-    app.run(port=Config.PORT, debug=Config.DEBUG)
+    app.run(host=Config.APP_RUN_HOST, port=Config.PORT, debug=Config.DEBUG)

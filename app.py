@@ -1,100 +1,29 @@
-from enum import Enum
-import telebot
-from emoji import emojize
+from datetime import datetime
+from dateutil.relativedelta import relativedelta
 from flask import Flask, request, jsonify
 import os
+from database import (
+    init_app,
+    config_db,
+    db
+)
+from config import Config
+from services.falconfeeds import FalconFeedsService
+from dotenv import load_dotenv
+from models.threat_actor import ThreatActor
+from models.site import Site
+from models.industry import Industry
+from models.country import Country
+from models.organization import Organization
+from models.image import Image
+from models.post import Post, post_country_association
 
+load_dotenv()
 app = Flask(__name__)
-port = int(os.environ.get("PORT", 5000))
-TG_TOKEN_KEY = os.environ.get("TG_TOKEN_KEY")
-CHAT_ID = os.environ.get("TG_CHAT_ID")
-USERNAME = os.environ.get("AUTH_USERNAME")
-PASSWORD = os.environ.get("AUTH_PASSWORD")
-
-member_countries_emojis = {
-    'Antigua and Barbuda': emojize(":antigua_barbuda:", language='alias')+" (AG)",
-    'Bahamas': emojize(":bahamas:", language='alias')+ " (BS)",
-    'Barbados': emojize(":barbados:", language='alias')+" (BB)",
-    'Belize': emojize(":belize:", language='alias')+ " (BZ)",
-    'Canada': emojize(":canada:", language='alias')+ " (CA)", 
-    'Dominica': emojize(":dominica:", language='alias')+ " (DM)",
-    'Dominican Republic': emojize(":dominican_republic:", language='alias')+ " (DO)",
-    'Grenada': emojize(":grenada:", language='alias')+ " (GD)",
-    'Guyana': emojize(":guyana:", language='alias')+ " (GY)",
-    'Jamaica': emojize(":jamaica:", language='alias')+ " (JM)",
-    'Saint Kitts and Nevis': emojize(":st_kitts_nevis:", language='alias')+ " (KN)",
-    'Saint Lucia': emojize(":st_lucia:", language='alias')+ " (LC)",
-    'Saint Vincent and the Grenadines': emojize(":st_vincent_grenadines:", language='alias')+ " (VC)",
-    'Suriname': emojize(":suriname:", language='alias')+ " (SR)",
-    'Trinidad and Tobago': emojize(":trinidad_tobago:", language='alias')+ " (TT)",
-    'USA': emojize(":us:", language='alias')+ " (US)",
-    "Argentina": emojize(":argentina:", language='alias')+ " (AR)",
-    "Bolivia": emojize(":bolivia:", language='alias')+ " (BO)",
-    "Brazil": emojize(":brazil:", language='alias')+ " (BR)",
-    "Chile": emojize(":chile:", language='alias')+ " (CL)",
-    "Colombia": emojize(":colombia:", language='alias')+ " (CO)",
-    "Costa Rica": emojize(":costa_rica:", language='alias')+ " (CR)",
-    "Cuba": emojize(":cuba:", language='alias')+ " (CU)",
-    "Ecuador": emojize(":ecuador:", language='alias')+ " (EC)",
-    "El Salvador": emojize(":el_salvador:", language='alias')+ " (SV)",
-    "Guatemala": emojize(":guatemala:", language='alias')+ " (GT)",
-    "Haiti": emojize(":haiti:", language='alias')+ " (HT)",
-    "Honduras": emojize(":honduras:", language='alias')+ " (HN)",
-    "Mexico": emojize(":mexico:", language='alias')+ " (MX)",
-    "Panama": emojize(":panama:", language='alias')+ " (PA)",
-    "Paraguay": emojize(":paraguay:", language='alias')+ " (PY)",
-    "Peru": emojize(":peru:", language='alias')+ " (PE)",
-    "Uruguay": emojize(":uruguay:", language='alias')+ " (UY)",
-    "Venezuela": emojize(":venezuela:", language='alias')+ " (VE)",
-    "Portugal": emojize(":portugal:", language='alias')+ " (PT)",
-}
-class Event(Enum):
-    THREAT_FEED = 'NEW_POST'
-
-class Category(Enum):
-    RANSOMWARE = 'Ransomware'
-    DDOS = 'DDoS Attack'
-    MALWARE = 'Malware'
-    PHISHING = 'Phishing'
-    DATA_LEAK = 'Data Leak'
-    COMBO_LIST = 'Combo List'
-    DATA_BREACH = 'Data Breach'
-    LOGS = 'Logs'
-    DEFACEMENT = 'Defacement'
-    ALERT = 'Alert'
-    VULNERABILITY = 'Vulnerability'
-
-country_victims = [
-    'Antigua and Barbuda', 'Argentina', 'Bahamas', 'Barbados', 
-    'Belize', 'Bolivia', 'Brazil', 'Canada', 'Chile', 'Colombia',
-    'Costa Rica', 'Cuba', 'Dominica', 'Dominican Republic', 'Ecuador',
-    'El Salvador', 'Grenada', 'Guatemala', 'Guyana', 'Haiti', 'Honduras', 
-    'Jamaica', 'Mexico', 'Nicaragua', 'Panama', 'Paraguay', 'Peru', 
-    'Saint Kitts and Nevis', 'Saint Lucia', 'Saint Vincent and the Grenadines',
-    'Suriname', 'Trinidad and Tobago', 'USA', 'Uruguay','Venezuela'
-]
-
-def emojize_countries(countries):
-    emojis = []
-    for country in countries:
-        emojis.append(member_countries_emojis[country])
-    return ', '.join(emojis)
-
-def test_emojis():
-    bot = telebot.TeleBot(TG_TOKEN_KEY)
-    bot.send_message(CHAT_ID, emojize_countries(country_victims), parse_mode='HTML')
-
-def enviar_incidente(token, chat_id, title, content, category, url, countries, threat_actors):
-    bot = telebot.TeleBot(token)
-    texto = emojize(":police_car_light:", language='alias') + \
-        " <b>Nuevo Incidente de "+category+"</b> " + emojize(":police_car_light: \n", language='alias') \
-            + "<b>Title</b>: " + title + "\n"\
-            + "<b>Threat Actors</b>: " + threat_actors + "\n"\
-            + "<b>Content</b>: " + content \
-            + "\n<b>Países miembros afectados</b>: " + emojize_countries(countries) \
-            + " \n<b>Publicado en</b>: <a href=\"" + url + "\">Link</a>"
-    for x in telebot.util.smart_split(texto, 4096):
-        bot.send_message(chat_id, texto, parse_mode='HTML')
+app.config.from_object(Config)
+app.json.sort_keys = False
+init_app(app)
+config_db(app)
 
 class FalconFeeds:
 
@@ -163,5 +92,94 @@ def falconfeeds_webhook():
     return jsonify(message="Fail!"), 400
 
 
+@app.route('/stats/threat_actors', methods=['GET'])
+def get_stats_by_threat_actor():
+    date = request.args.get('date')
+    name = request.args.get('name')
+    stats = {}
+    query = ThreatActor.query
+
+    if date:
+        date = datetime.strptime(date, '%Y-%m-%d').date()
+        date.replace(day=1)
+        query = query.join(ThreatActor.posts).filter(Post.published_at.between(date, date + relativedelta(months=1)))
+    if name:
+        query = query.filter(ThreatActor.name == name)
+
+    for threat_actor in query.all():
+        stats[threat_actor.name] = threat_actor.posts.count()
+    stats = {k: v for k, v in sorted(stats.items(), key=lambda item: item[1], reverse=True)}
+    return stats
+
+
+@app.route('/stats/countries', methods=['GET'])
+def get_stats_by_country():
+    date = request.args.get('date')
+    name = request.args.get('name')
+    stats = {}
+    query = (
+        db.session.query(Post, Country)
+        .select_from(Post)
+        .join(post_country_association, Post.id == post_country_association.c.post_id)
+        .join(Country, post_country_association.c.country_id == Country.id)
+    )
+
+    if date:
+        date = datetime.strptime(date, '%Y-%m-%d').date()
+        date.replace(day=1)
+        query = query.filter(Post.published_at.between(date, date + relativedelta(months=1)))
+    if name:
+        query = query.filter(Country.name == name)
+
+    for country in query.all():
+        stats[country.name] = country.posts.count()
+    return stats
+
+
+
+@app.route('/stats/threat_actors', methods=['GET'])
+def get_stats_by_threat_actor():
+    date = request.args.get('date')
+    name = request.args.get('name')
+    stats = {}
+    query = ThreatActor.query
+
+    if date:
+        date = datetime.strptime(date, '%Y-%m-%d').date()
+        date.replace(day=1)
+        query = query.join(ThreatActor.posts).filter(Post.published_at.between(date, date + relativedelta(months=1)))
+    if name:
+        query = query.filter(ThreatActor.name == name)
+
+    for threat_actor in query.all():
+        stats[threat_actor.name] = threat_actor.posts.count()
+    stats = {k: v for k, v in sorted(stats.items(), key=lambda item: item[1], reverse=True)}
+    return stats
+
+
+@app.route('/stats/countries', methods=['GET'])
+def get_stats_by_country():
+    date = request.args.get('date')
+    name = request.args.get('name')
+    stats = {}
+    query = (
+        db.session.query(Post, Country)
+        .select_from(Post)
+        .join(post_country_association, Post.id == post_country_association.c.post_id)
+        .join(Country, post_country_association.c.country_id == Country.id)
+    )
+
+    if date:
+        date = datetime.strptime(date, '%Y-%m-%d').date()
+        date.replace(day=1)
+        query = query.filter(Post.published_at.between(date, date + relativedelta(months=1)))
+    if name:
+        query = query.filter(Country.name == name)
+
+    for country in query.all():
+        stats[country.name] = country.posts.count()
+    return stats
+
+
 if __name__ == "__main__":
-    app.run(port=port)
+    app.run(port=Config.PORT, debug=Config.DEBUG)

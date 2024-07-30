@@ -44,7 +44,6 @@ class FalconFeedsService:
             if country in country_victims:
                 in_list.append(country)
         return in_list
-
     def country_victim_in(self, country_victims):
         if self.victims == None or self.victims == [] or self.victims is not type(list):
             return []
